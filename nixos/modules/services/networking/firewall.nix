@@ -48,6 +48,11 @@ let
     then "nixos-fw-accept"
     else "nixos-fw-refuse";
 
+  prependStringIfNotNull = prefix: string:
+    if string != null
+    then "${prefix}${string}"
+    else "";
+
   writeShScript = name: text: let dir = pkgs.writeScriptBin name ''
     #! ${pkgs.stdenv.shell} -e
     ${text}
@@ -180,37 +185,17 @@ let
                   "nixos-fw-output"
                 else "__invalid_chain__";
           target = getAttr rule.target targetChains;
-          ifacein = if
-              rule.fromInterface != null
-            then
-              "-i ${rule.fromInterface}"
-            else "";
-          ifaceout = if
-              rule.toInterface != null
-            then
-              "-o ${rule.toInterface}"
-            else "";
-          srcaddr = if
-              rule.sourceAddr != null
-            then
-              #"-s ${rule.sourceAddr.ip}/${rule.sourceAddr.prefixLength}"
-              "-s ${rule.sourceAddr}"
-            else "";
-          destaddr = if
-              rule.destinationAddr != null
-            then
-              #"-d ${rule.destinationAddr.ip}/${rule.destinationAddr.prefixLength}"
-              "-d ${rule.destinationAddr}"
-            else "";
+          ifacein = prependStringIfNotNull "-i " rule.fromInterface;
+          ifaceout = prependStringIfNotNull "-o " rule.toInterface;
+          srcaddr = prependStringIfNotNull "-s " rule.sourceAddr;
+          destaddr = prependStringIfNotNull "-d " rule.destinationAddr;
           sourceport = if
-              rule.sourcePort != null &&
               elem rule.protocol [ "tcp" "udp" "dccp" "sctp" ]
-            then "--sport rule.sourcePort"
+            then prependStringIfNotNull "--sport " rule.sourcePort
             else "";
           destinationport = if
-              rule.destinationPort != null &&
               elem rule.protocol [ "tcp" "udp" "dccp" "sctp" ]
-            then "--dport ${rule.destinationPort}"
+            then prependStringIfNotNull "--dport " rule.destinationPort
             else "";
         in
         ''

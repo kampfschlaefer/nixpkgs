@@ -25,7 +25,7 @@ in {
               ipv6Address = "fd0${toString n}::1";
               ipv6PrefixLength = 64;*/
               ip4 = [{ address = "192.168.${toString n}.1"; prefixLength = 24; }];
-              ip6 = [{ address = "fd0${toString n}::1"; prefixLength = 64; }];
+              ip6 = [{ address = "fd0${toString n}\:\:1"; prefixLength = 64; }];
             };
           }
         )));
@@ -72,7 +72,25 @@ in {
           sourceAddr = "192.168.1.0/24";
           target = "ACCEPT";
         }
-        { fromInterface = "eth3"; toInterface = "eth+"; target = "ACCEPT"; }
+        {
+          fromInterface = "eth3";
+          toInterface = "eth+";
+          protocol = "tcp";
+          sourcePort = "1024:65535";
+          target = "ACCEPT";
+        }
+        {
+          fromInterface = "eth3";
+          toInterface = "eth+";
+          protocol = "icmp";
+          target = "ACCEPT";
+        }
+        {
+          fromInterface = "eth3";
+          toInterface = "eth+";
+          protocol = "icmpv6";
+          target = "ACCEPT";
+        }
       ];
     };
 
@@ -93,17 +111,6 @@ in {
       networking.firewall.defaultPolicies = {
         input = "ACCEPT"; output = "ACCEPT"; forward = "DROP";
       };
-      networking.firewall.rules = [
-        /*{
-          sourceAddr = "192.168.3.0/24";
-          fromInterface = "eth1";
-          target = "REJECT";
-        }*/
-        {
-          fromInterface = "eth+";
-          target = "ACCEPT";
-        }
-      ];
     };
     site_b = { config, pkgs, ... }:
     {
@@ -122,17 +129,6 @@ in {
       networking.firewall.defaultPolicies = {
         input = "ACCEPT"; output = "ACCEPT"; forward = "DROP";
       };
-      networking.firewall.rules = [
-        /*{
-          sourceAddr = "192.168.3.0/24";
-          fromInterface = "eth1";
-          target = "REJECT";
-        }
-        {
-          fromInterface = "eth+";
-          target = "ACCEPT";
-        }*/
-      ];
     };
     site_c = { config, pkgs, ... }:
     {
