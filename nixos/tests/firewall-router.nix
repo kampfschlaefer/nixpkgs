@@ -59,7 +59,13 @@ in {
           target = "ACCEPT";
         }
         { fromInterface = "eth1"; toInterface = "eth2"; target = "ACCEPT"; }
-        { fromInterface = "eth2"; toInterface = "eth1"; target = "ACCEPT"; }
+        {
+          fromInterface = "eth2";
+          toInterface = "eth1";
+          destinationPort = "80";
+          protocol = "tcp";
+          target = "ACCEPT";
+        }
         {
           fromInterface = "eth1";
           toInterface = "eth3";
@@ -171,6 +177,7 @@ in {
       };
 
       subtest "check setup", sub {
+        $router->execute("systemctl status -l -n 50 firewall >&2");
         $router->execute("ip -4 a >&2");
         $router->execute("ip -6 a >&2");
         $router->execute("ip -4 r >&2");
@@ -201,12 +208,12 @@ in {
         $site_a->fail(${ping6cmd "fd03::2"});
         $site_a->fail("curl -q --fail --connect-timeout 1 [fd03::2] >&2");
       };
-      subtest "site B can access site A but not site C", sub {
-        $site_b->succeed(${pingcmd "192.168.1.2"});
+      subtest "site B can access site A port 80 (no ping) but not site C", sub {
+        $site_b->fail(${pingcmd "192.168.1.2"});
         $site_b->succeed("curl -q --fail --connect-timeout 1 192.168.1.2 >&2");
         $site_b->fail(${pingcmd "192.168.3.2"});
         $site_b->fail("curl -q --fail --connect-timeout 1 192.168.3.2 >&2");
-        $site_b->succeed(${ping6cmd "fd01::2"});
+        $site_b->fail(${ping6cmd "fd01::2"});
         $site_b->succeed("curl -q --fail --connect-timeout 1 [fd01::2] >&2");
         $site_b->fail(${ping6cmd "fd03::2"});
         $site_b->fail("curl -q --fail --connect-timeout 1 [fd03::2] >&2");
@@ -232,13 +239,5 @@ in {
         $site_a->execute("iptables -L -nv >&2");
         $site_a->execute("ip6tables -L -nv >&2");
       };
-
-      # Local connections should still work.
-      #$walled->succeed("curl -v http://localhost/ >&2");
-
-      # Connections to the firewalled machine should fail.
-      #$attacker->fail("curl --fail --connect-timeout 2 http://walled/ >&2");
-
-      #$walled->succeed("curl -v http://attacker/ >&2");
     '';
 })

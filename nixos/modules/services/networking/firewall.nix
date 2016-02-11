@@ -164,7 +164,6 @@ let
                 ["ipv4"]
               else
                 ["ipv4" "ipv6"];
-
           chain = if
               rule.fromInterface != null && rule.toInterface != null
             then
@@ -203,13 +202,31 @@ let
               #"-d ${rule.destinationAddr.ip}/${rule.destinationAddr.prefixLength}"
               "-d ${rule.destinationAddr}"
             else "";
+          sourceport = if
+              rule.sourcePort != null &&
+              elem rule.protocol [ "tcp" "udp" "dccp" "sctp" ]
+            then "--sport rule.sourcePort"
+            else "";
+          destinationport = if
+              rule.destinationPort != null &&
+              elem rule.protocol [ "tcp" "udp" "dccp" "sctp" ]
+            then "--dport ${rule.destinationPort}"
+            else "";
         in
         ''
           ${optionalString (elem "ipv4" ipversions) ''
-            iptables -A ${chain} -p ${rule.protocol} ${ifacein} ${ifaceout} ${srcaddr} ${destaddr} -j ${target}
+            iptables -A ${chain} -p ${rule.protocol} \
+              ${ifacein} ${ifaceout} \
+              ${srcaddr} ${destaddr} \
+              ${sourceport} ${destinationport} \
+              -j ${target}
           ''}
           ${optionalString (elem "ipv6" ipversions) ''
-            ip6tables -A ${chain} -p ${rule.protocol} ${ifacein} ${ifaceout} ${srcaddr} ${destaddr} -j ${target}
+            ip6tables -A ${chain} -p ${rule.protocol} \
+              ${ifacein} ${ifaceout} \
+              ${srcaddr} ${destaddr} \
+              ${sourceport} ${destinationport} \
+              -j ${target}
           ''}
         ''
       ) cfg.rules
@@ -501,6 +518,25 @@ in
           type = types.nullOr types.str;
           default = null;
           description = ''
+          '';
+        };
+
+        sourcePort = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          example = "10000:15000";
+          description = ''
+            A port or portrange (as string) for the --sport option of iptables.
+            TODO: Validate this on protocol in ["tcp" "udp"]
+          '';
+        };
+        destinationPort = mkOption {
+          type = types.nullOr types.str;
+          default = null;
+          example = "80:443";
+          description = ''
+            A port or portrange (as string) for the --dport option of iptables.
+            TODO: Validate this on protocol in ["tcp" "udp"]
           '';
         };
 
