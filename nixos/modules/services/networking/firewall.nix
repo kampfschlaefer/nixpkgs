@@ -67,7 +67,7 @@ let
     ip46tables -D INPUT -j nixos-fw-input 2> /dev/null || true
     ip46tables -D OUTPUT -j nixos-fw-output 2> /dev/null || true
     ip46tables -D FORWARD -j nixos-fw-forward 2> /dev/null || true
-    for chain in nixos-fw-input nixos-fw-output nixos-fw-forward nixos-fw-accept nixos-fw-log-refuse nixos-fw-refuse FW_REFUSE; do
+    for chain in nixos-fw nixos-fw-input nixos-fw-output nixos-fw-forward nixos-fw-accept nixos-fw-log-refuse nixos-fw-refuse __invalid_chain__ FW_REFUSE; do
       ip46tables -F "$chain" 2> /dev/null || true
       ip46tables -X "$chain" 2> /dev/null || true
     done

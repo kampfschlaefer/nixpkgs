@@ -225,7 +225,6 @@ in {
         $site_c->succeed("curl -q --fail --connect-timeout 1 [fd02::2] >&2");
       };
 
-
       subtest "iptables debug", sub {
         # Output rules for debugging
         $router->execute("iptables -L -nv >&2");
@@ -234,6 +233,13 @@ in {
         $router->execute("ip6tables -t nat -L -nv >&2");
         $site_a->execute("iptables -L -nv >&2");
         $site_a->execute("ip6tables -L -nv >&2");
+      };
+
+      subtest "reload firewall", sub {
+        $router->succeed("systemctl reload firewall.service >&2");
+        $router->waitForUnit("firewall");
+        $site_a->succeed(${pingcmd "192.168.2.2"});
+        $site_a->succeed(${ping6cmd "fd02::2"});
       };
     '';
 })
