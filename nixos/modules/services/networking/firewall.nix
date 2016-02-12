@@ -134,6 +134,7 @@ let
     # Accept packets from established or related connections.
     ip46tables -A nixos-fw-input -m conntrack --ctstate ESTABLISHED,RELATED -j nixos-fw-accept
     ip46tables -A nixos-fw-forward -m conntrack --ctstate ESTABLISHED,RELATED -j nixos-fw-accept
+    ip46tables -A nixos-fw-output -m conntrack --ctstate ESTABLISHED,RELATED -j nixos-fw-accept
 
     # Put the rules into their respective chains.
     ${concatMapStrings (rule:
